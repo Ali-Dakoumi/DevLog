@@ -3,7 +3,8 @@
   "displayName": "DevLog — Development-Only Console Logs",
   "description": "Insert environment-aware, development-only console logs for JavaScript and TypeScript.",
   "version": "0.1.0",
-  "publisher": "your-publisher-id",
+  "publisher": "DakoumiAli",
+  "icon": "assets/icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
