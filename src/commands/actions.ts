@@ -1,8 +1,146 @@
-import * as vscode from 'vscode'; import { config } from '../config/configuration'; import { commentedOwnedRanges, ownedRanges } from '../core/analyzer'; import { conditionFor } from '../core/environment'; import { ProjectDetector } from '../environment/project'; import { scanWorkspace, SOURCE_GLOB, EXCLUDE_GLOB } from '../scanner/workspaceScanner';
-export async function removeCurrent():Promise<void>{const e=vscode.window.activeTextEditor;if(!e)return;await removeUris([e.document.uri]);}
-export async function removeWorkspace():Promise<void>{const uris=await vscode.workspace.findFiles(SOURCE_GLOB,EXCLUDE_GLOB);const yes=await vscode.window.showWarningMessage(`Remove DevLog-owned blocks from ${uris.length} scanned files?`,'Remove');if(yes==='Remove')await removeUris(uris);}
-async function removeUris(uris:vscode.Uri[]):Promise<void>{const edit=new vscode.WorkspaceEdit();let count=0;for(const uri of uris){const b=await vscode.workspace.fs.readFile(uri),t=Buffer.from(b).toString('utf8'),c=config(uri);const doc=await vscode.workspace.openTextDocument(uri);for(const r of ownedRanges(t,uri.fsPath,c.marker).sort((a,b)=>b.start-a.start)){edit.delete(uri,new vscode.Range(doc.positionAt(r.start),doc.positionAt(r.end)));count++;}}await vscode.workspace.applyEdit(edit);vscode.window.showInformationMessage(`Removed ${count} DevLog block${count===1?'':'s'}.`);}
-export async function toggleComments(comment:boolean):Promise<void>{const e=vscode.window.activeTextEditor;if(!e)return;const marker=config(e.document.uri).marker,text=e.document.getText(),edit=new vscode.WorkspaceEdit();if(comment){for(const r of ownedRanges(text,e.document.fileName,marker).sort((a,b)=>b.start-a.start)){const range=new vscode.Range(e.document.positionAt(r.start),e.document.positionAt(r.end)),original=e.document.getText(range);edit.replace(e.document.uri,range,original.split(/\r?\n/).map(x=>`// ${x}`).join(e.document.eol===vscode.EndOfLine.CRLF?'\r\n':'\n'));}}else for(const r of commentedOwnedRanges(text,e.document.fileName,marker).sort((a,b)=>b.start-a.start))edit.replace(e.document.uri,new vscode.Range(e.document.positionAt(r.start),e.document.positionAt(r.end)),r.restored);await vscode.workspace.applyEdit(edit);}
-export async function findAll():Promise<void>{const f=await scanWorkspace(config().marker);const p=f.filter(x=>x.kind==='protected');const pick=await vscode.window.showQuickPick(p.map(x=>({label:`$(shield) ${vscode.workspace.asRelativePath(x.file)}:${x.line}`,description:x.text,f:x})),{placeHolder:`${p.length} DevLog statements`});if(pick){const d=await vscode.workspace.openTextDocument(pick.f.file);const e=await vscode.window.showTextDocument(d);e.selection=new vscode.Selection(pick.f.line-1,pick.f.column-1,pick.f.line-1,pick.f.column-1);e.revealRange(e.selection);}}
-export async function convert(detector:ProjectDetector):Promise<void>{const e=vscode.window.activeTextEditor;if(!e)return;const s=e.selection;if(s.isEmpty){vscode.window.showErrorMessage('Select exactly one console statement to convert.');return;}const raw=e.document.getText(s).trim();if(!/^console\.(log|warn|error|info|debug|table)\s*\([\s\S]*\)\s*;?$/.test(raw)){vscode.window.showErrorMessage('Selection is not a complete console statement.');return;}const c=config(e.document.uri),d=await detector.detect(e.document.uri,c.environment,c.customCondition),condition=conditionFor(d.id,d.condition??c.customCondition);if(!condition){vscode.window.showErrorMessage('Configure a safe DevLog environment before converting.');return;}const indent=e.document.lineAt(s.start.line).text.match(/^\s*/)?.[0]??'';const unit=indent.includes('\t')?'\t':'  ';const eol=e.document.eol===vscode.EndOfLine.CRLF?'\r\n':'\n';await e.edit(b=>b.replace(s,`/* ${c.marker} */${eol}if (${condition}) {${eol}${indent}${unit}${raw}${eol}${indent}}`));}
-export async function checkSafety():Promise<void>{await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'DevLog safety scan'},async p=>{const f=await scanWorkspace(config().marker,p),unsafe=f.filter(x=>x.kind==='unsafe'||x.kind==='malformed');const out=vscode.window.createOutputChannel('DevLog Safety');out.clear();out.appendLine(`Protected: ${f.filter(x=>x.kind==='protected').length}`);out.appendLine(`Potentially unsafe: ${f.filter(x=>x.kind==='unsafe').length}`);out.appendLine(`Malformed: ${f.filter(x=>x.kind==='malformed').length}`);for(const x of f)out.appendLine(`${x.kind.toUpperCase()} ${x.file}:${x.line}:${x.column} ${x.text}`);out.show();vscode.window.showInformationMessage(unsafe.length?`DevLog found ${unsafe.length} finding(s) requiring review.`:'No unprotected console statements detected in scanned files.');});}
+import * as vscode from 'vscode';
+import { config } from '../config/configuration';
+import { commentedOwnedRanges, ownedRanges } from '../core/analyzer';
+import { conditionFor } from '../core/environment';
+import { ProjectDetector } from '../environment/project';
+import { scanWorkspace, SOURCE_GLOB, EXCLUDE_GLOB } from '../scanner/workspaceScanner';
+export async function removeCurrent(): Promise<void> {
+  const e = vscode.window.activeTextEditor;
+  if (!e) return;
+  await removeUris([e.document.uri]);
+}
+export async function removeWorkspace(): Promise<void> {
+  const uris = await vscode.workspace.findFiles(SOURCE_GLOB, EXCLUDE_GLOB);
+  const yes = await vscode.window.showWarningMessage(
+    `Remove DevLog-owned blocks from ${uris.length} scanned files?`,
+    'Remove',
+  );
+  if (yes === 'Remove') await removeUris(uris);
+}
+async function removeUris(uris: vscode.Uri[]): Promise<void> {
+  const edit = new vscode.WorkspaceEdit();
+  let count = 0;
+  for (const uri of uris) {
+    const b = await vscode.workspace.fs.readFile(uri),
+      t = Buffer.from(b).toString('utf8'),
+      c = config(uri);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    for (const r of ownedRanges(t, uri.fsPath, c.marker, c.helperName).sort(
+      (a, b) => b.start - a.start,
+    )) {
+      edit.delete(uri, new vscode.Range(doc.positionAt(r.start), doc.positionAt(r.end)));
+      count++;
+    }
+  }
+  await vscode.workspace.applyEdit(edit);
+  vscode.window.showInformationMessage(`Removed ${count} DevLog block${count === 1 ? '' : 's'}.`);
+}
+export async function toggleComments(comment: boolean): Promise<void> {
+  const e = vscode.window.activeTextEditor;
+  if (!e) return;
+  const c = config(e.document.uri),
+    text = e.document.getText(),
+    edit = new vscode.WorkspaceEdit();
+  if (comment) {
+    for (const r of ownedRanges(text, e.document.fileName, c.marker, c.helperName).sort(
+      (a, b) => b.start - a.start,
+    )) {
+      const range = new vscode.Range(e.document.positionAt(r.start), e.document.positionAt(r.end)),
+        original = e.document.getText(range);
+      edit.replace(
+        e.document.uri,
+        range,
+        original
+          .split(/\r?\n/)
+          .map((x) => `// ${x}`)
+          .join(e.document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'),
+      );
+    }
+  } else
+    for (const r of commentedOwnedRanges(text, e.document.fileName, c.marker, c.helperName).sort(
+      (a, b) => b.start - a.start,
+    ))
+      edit.replace(
+        e.document.uri,
+        new vscode.Range(e.document.positionAt(r.start), e.document.positionAt(r.end)),
+        r.restored,
+      );
+  await vscode.workspace.applyEdit(edit);
+}
+export async function findAll(): Promise<void> {
+  const c = config(),
+    f = await scanWorkspace(c.marker, undefined, c.helperName);
+  const p = f.filter((x) => x.kind === 'protected');
+  const pick = await vscode.window.showQuickPick(
+    p.map((x) => ({
+      label: `$(shield) ${vscode.workspace.asRelativePath(x.file)}:${x.line}`,
+      description: x.text,
+      f: x,
+    })),
+    { placeHolder: `${p.length} DevLog statements` },
+  );
+  if (pick) {
+    const d = await vscode.workspace.openTextDocument(pick.f.file);
+    const e = await vscode.window.showTextDocument(d);
+    e.selection = new vscode.Selection(
+      pick.f.line - 1,
+      pick.f.column - 1,
+      pick.f.line - 1,
+      pick.f.column - 1,
+    );
+    e.revealRange(e.selection);
+  }
+}
+export async function convert(detector: ProjectDetector): Promise<void> {
+  const e = vscode.window.activeTextEditor;
+  if (!e) return;
+  const s = e.selection;
+  if (s.isEmpty) {
+    vscode.window.showErrorMessage('Select exactly one console statement to convert.');
+    return;
+  }
+  const raw = e.document.getText(s).trim();
+  if (!/^console\.(log|warn|error|info|debug|table)\s*\([\s\S]*\)\s*;?$/.test(raw)) {
+    vscode.window.showErrorMessage('Selection is not a complete console statement.');
+    return;
+  }
+  const c = config(e.document.uri),
+    d = await detector.detect(e.document.uri, c.environment, c.customCondition),
+    condition = conditionFor(d.id, d.condition ?? c.customCondition);
+  if (!condition) {
+    vscode.window.showErrorMessage('Configure a safe DevLog environment before converting.');
+    return;
+  }
+  const indent = e.document.lineAt(s.start.line).text.match(/^\s*/)?.[0] ?? '';
+  const unit = indent.includes('\t') ? '\t' : '  ';
+  const eol = e.document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n';
+  await e.edit((b) =>
+    b.replace(
+      s,
+      `/* ${c.marker} */${eol}if (${condition}) {${eol}${indent}${unit}${raw}${eol}${indent}}`,
+    ),
+  );
+}
+export async function checkSafety(): Promise<void> {
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: 'DevLog safety scan' },
+    async (p) => {
+      const c = config(),
+        f = await scanWorkspace(c.marker, p, c.helperName),
+        unsafe = f.filter((x) => x.kind === 'unsafe' || x.kind === 'malformed');
+      const out = vscode.window.createOutputChannel('DevLog Safety');
+      out.clear();
+      out.appendLine(`Protected: ${f.filter((x) => x.kind === 'protected').length}`);
+      out.appendLine(`Potentially unsafe: ${f.filter((x) => x.kind === 'unsafe').length}`);
+      out.appendLine(`Malformed: ${f.filter((x) => x.kind === 'malformed').length}`);
+      for (const x of f)
+        out.appendLine(`${x.kind.toUpperCase()} ${x.file}:${x.line}:${x.column} ${x.text}`);
+      out.show();
+      vscode.window.showInformationMessage(
+        unsafe.length
+          ? `DevLog found ${unsafe.length} finding(s) requiring review.`
+          : 'No unprotected console statements detected in scanned files.',
+      );
+    },
+  );
+}

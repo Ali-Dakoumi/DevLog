@@ -1,2 +1,49 @@
-import * as vscode from 'vscode'; import { analyzeSource } from '../core/analyzer'; import { config } from '../config/configuration';
-export class Diagnostics implements vscode.Disposable { private readonly collection=vscode.languages.createDiagnosticCollection('devlog'); private timer?:NodeJS.Timeout; private readonly subscriptions:vscode.Disposable[]=[]; constructor(){this.subscriptions.push(vscode.workspace.onDidOpenTextDocument(d=>this.update(d)),vscode.workspace.onDidChangeTextDocument(e=>{clearTimeout(this.timer);this.timer=setTimeout(()=>this.update(e.document),500);}),vscode.workspace.onDidCloseTextDocument(d=>this.collection.delete(d.uri)));vscode.workspace.textDocuments.forEach(d=>this.update(d));} private update(d:vscode.TextDocument):void{if(!config(d.uri).diagnostics||!['javascript','typescript','javascriptreact','typescriptreact'].includes(d.languageId)){this.collection.delete(d.uri);return;}const ds=analyzeSource(d.getText(),d.fileName,config(d.uri).marker).filter(f=>f.kind==='unsafe').map(f=>{const line=f.line-1,col=f.column-1;const x=new vscode.Diagnostic(new vscode.Range(line,col,line,col+Math.max(7,f.text.length)),`Potential production console.${f.method} statement.`,vscode.DiagnosticSeverity.Warning);x.source='DevLog';x.code='unsafe-console';return x;});this.collection.set(d.uri,ds);} dispose():void{clearTimeout(this.timer);this.collection.dispose();this.subscriptions.forEach(s=>s.dispose());} }
+import * as vscode from 'vscode';
+import { analyzeSource } from '../core/analyzer';
+import { config } from '../config/configuration';
+export class Diagnostics implements vscode.Disposable {
+  private readonly collection = vscode.languages.createDiagnosticCollection('devlog');
+  private timer?: NodeJS.Timeout;
+  private readonly subscriptions: vscode.Disposable[] = [];
+  constructor() {
+    this.subscriptions.push(
+      vscode.workspace.onDidOpenTextDocument((d) => this.update(d)),
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.update(e.document), 500);
+      }),
+      vscode.workspace.onDidCloseTextDocument((d) => this.collection.delete(d.uri)),
+    );
+    vscode.workspace.textDocuments.forEach((d) => this.update(d));
+  }
+  private update(d: vscode.TextDocument): void {
+    const c = config(d.uri);
+    if (
+      !c.diagnostics ||
+      !['javascript', 'typescript', 'javascriptreact', 'typescriptreact'].includes(d.languageId)
+    ) {
+      this.collection.delete(d.uri);
+      return;
+    }
+    const ds = analyzeSource(d.getText(), d.fileName, c.marker, c.helperName)
+      .filter((f) => f.kind === 'unsafe')
+      .map((f) => {
+        const line = f.line - 1,
+          col = f.column - 1;
+        const x = new vscode.Diagnostic(
+          new vscode.Range(line, col, line, col + Math.max(7, f.text.length)),
+          `Potential production console.${f.method} statement.`,
+          vscode.DiagnosticSeverity.Warning,
+        );
+        x.source = 'DevLog';
+        x.code = 'unsafe-console';
+        return x;
+      });
+    this.collection.set(d.uri, ds);
+  }
+  dispose(): void {
+    clearTimeout(this.timer);
+    this.collection.dispose();
+    this.subscriptions.forEach((s) => s.dispose());
+  }
+}

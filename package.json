@@ -1,14 +1,18 @@
 {
   "name": "devlog-development-only-logs",
   "displayName": "DevLog — Development-Only Console Logs",
-  "description": "Log freely. Ship clean. Production-aware console logging for JavaScript and TypeScript.",
+  "description": "Insert environment-aware, development-only console logs for JavaScript and TypeScript.",
   "version": "0.1.0",
-  "publisher": "your-publisher",
+  "publisher": "your-publisher-id",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/devlog"
+    "url": "https://github.com/Ali-Dakoumi/DevLog.git"
   },
+  "bugs": {
+    "url": "https://github.com/Ali-Dakoumi/DevLog/issues"
+  },
+  "homepage": "https://github.com/Ali-Dakoumi/DevLog#readme",
   "engines": {
     "vscode": "^1.90.0",
     "node": ">=18"
@@ -19,11 +23,11 @@
   ],
   "keywords": [
     "console",
+    "console.log",
     "logging",
     "debug",
     "development",
     "production",
-    "console-log",
     "debugging",
     "typescript",
     "javascript",
@@ -95,14 +99,6 @@
       {
         "command": "devlog.checkSafety",
         "title": "DevLog: Check Production Safety"
-      },
-      {
-        "command": "devlog.ignoreStatement",
-        "title": "DevLog: Ignore This Statement"
-      },
-      {
-        "command": "devlog.disableFile",
-        "title": "DevLog: Disable Warning for This File"
       }
     ],
     "keybindings": [
@@ -162,7 +158,9 @@
         },
         "devlog.helperName": {
           "type": "string",
-          "default": "devLog"
+          "default": "devLog",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+          "description": "Helper function identifier used in helper mode. DevLog does not create or import it."
         },
         "devlog.includeFileName": {
           "type": "boolean",
@@ -186,7 +184,9 @@
         },
         "devlog.marker": {
           "type": "string",
-          "default": "@devlog"
+          "default": "@devlog",
+          "pattern": "^[A-Za-z0-9@_.-]+$",
+          "description": "Ownership marker placed in generated comments."
         },
         "devlog.useSemicolons": {
           "type": "boolean",
@@ -200,19 +200,6 @@
           ],
           "default": "single"
         },
-        "devlog.indentation": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "spaces",
-            "tabs"
-          ],
-          "default": "auto"
-        },
-        "devlog.productionCheck.enabled": {
-          "type": "boolean",
-          "default": true
-        },
         "devlog.diagnostics.enabled": {
           "type": "boolean",
           "default": false
@@ -225,18 +212,17 @@
     }
   },
   "dependencies": {
-    "minimatch": "^10.0.1",
     "typescript": "^5.6.3"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
     "@types/vscode": "^1.90.0",
-    "@typescript-eslint/eslint-plugin": "^8.8.0",
-    "@typescript-eslint/parser": "^8.8.0",
-    "@vscode/vsce": "^3.2.1",
-    "ansi-regex": "^6.4.0",
+    "@typescript-eslint/eslint-plugin": "8.48.0",
+    "@typescript-eslint/parser": "8.48.0",
+    "@vscode/vsce": "^4.0.0",
     "eslint": "^8.57.1",
     "prettier": "^3.3.3",
-    "vitest": "^2.1.2"
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
   }
 }
