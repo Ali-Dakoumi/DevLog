@@ -2,7 +2,7 @@
   "name": "devlog-development-only-logs",
   "displayName": "DevLog — Development-Only Console Logs",
   "description": "Insert environment-aware, development-only console logs for JavaScript and TypeScript.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "DakoumiAli",
   "icon": "assets/icon.png",
   "license": "MIT",
@@ -100,6 +100,22 @@
       {
         "command": "devlog.checkSafety",
         "title": "DevLog: Check Production Safety"
+      },
+      {
+        "command": "devlog.react.logValueChanges",
+        "title": "⚛ DevLog: Log Value Changes (useEffect)"
+      },
+      {
+        "command": "devlog.react.logRender",
+        "title": "⚛ DevLog: Log Component Render"
+      },
+      {
+        "command": "devlog.react.logLifecycle",
+        "title": "⚛ DevLog: Log Component Lifecycle"
+      },
+      {
+        "command": "devlog.logFunctionExecution",
+        "title": "DevLog: Log Function Execution"
       }
     ],
     "keybindings": [
@@ -126,6 +142,26 @@
           "command": "devlog.insertError",
           "when": "editorHasSelection",
           "group": "devlog@3"
+        },
+        {
+          "command": "devlog.react.logValueChanges",
+          "when": "editorHasSelection && (editorLangId == javascriptreact || editorLangId == typescriptreact)",
+          "group": "devlog.react@1"
+        },
+        {
+          "command": "devlog.react.logRender",
+          "when": "editorLangId == javascriptreact || editorLangId == typescriptreact",
+          "group": "devlog.react@2"
+        },
+        {
+          "command": "devlog.react.logLifecycle",
+          "when": "editorLangId == javascriptreact || editorLangId == typescriptreact",
+          "group": "devlog.react@3"
+        },
+        {
+          "command": "devlog.logFunctionExecution",
+          "when": "editorLangId == javascript || editorLangId == typescript || editorLangId == javascriptreact || editorLangId == typescriptreact",
+          "group": "devlog@4"
         }
       ]
     },
@@ -182,6 +218,21 @@
         "devlog.prefix": {
           "type": "string",
           "default": ""
+        },
+        "devlog.pretty.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use visually distinctive DevLog labels."
+        },
+        "devlog.pretty.icons": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include a log-type icon in pretty labels."
+        },
+        "devlog.pretty.prefix": {
+          "type": "string",
+          "default": "[DevLog]",
+          "description": "Prefix used in pretty labels."
         },
         "devlog.marker": {
           "type": "string",

@@ -3,6 +3,11 @@ import { detectEnvironment, validCondition } from '../src/core/environment';
 import { detectExpression, findPlacement } from '../src/core/parser';
 import { generateLog } from '../src/core/generator';
 import { analyzeSource, commentedOwnedRanges, removeOwned } from '../src/core/analyzer';
+import {
+  findFunctionContext,
+  parameterObject,
+  planUseEffectImport,
+} from '../src/core/instrumentation';
 describe('expression detection', () => {
   const text = 'const x = user.name;\nconst y = result?.data;\nconst z = users[0];';
   for (const x of ['user.name', 'result?.data', 'users[0]'])
@@ -113,5 +118,25 @@ describe('tsx', () => {
     const t = 'function C({user}: P) {\n  return <div>{user.name}</div>;\n}';
     expect(detectExpression(t, 'x.tsx', t.indexOf('user.name') + 2)).toBe('user.name');
     expect(findPlacement(t, 'x.tsx', t.indexOf('user.name'))?.indent).toBe('  ');
+  });
+});
+describe('instrumentation', () => {
+  it('finds an arrow component and its parameters', () => {
+    const text = 'const Card = (user, count) => {\n  return <div>{user.name}</div>;\n};';
+    const context = findFunctionContext(text, 'x.tsx', text.indexOf('user.name'));
+    expect(context?.name).toBe('Card');
+    expect(context?.isComponent).toBe(true);
+    expect(parameterObject(context?.parameters ?? [])).toBe('{ user, count }');
+  });
+  it('reuses an aliased useEffect import', () => {
+    const text = "import { useEffect as effect, useState } from 'react';\n";
+    const plan = planUseEffectImport(text, 'x.tsx', '\n', 'single');
+    expect(plan.hookIdentifier).toBe('effect');
+    expect(plan.edits).toEqual([]);
+  });
+  it('adds useEffect to an existing React import', () => {
+    const text = "import React, { useState } from 'react';\n";
+    const plan = planUseEffectImport(text, 'x.tsx', '\n', 'single');
+    expect(plan.edits[0].text).toBe('{ useEffect, useState }');
   });
 });

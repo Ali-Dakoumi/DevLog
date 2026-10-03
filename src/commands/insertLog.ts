@@ -81,6 +81,7 @@ export async function insertLog(detector: ProjectDetector, method: ConsoleMethod
         quote: c.quoteStyle,
         mode: c.mode,
         helperName: c.helperName,
+        pretty: c.pretty,
       }),
     });
   }

@@ -4,13 +4,17 @@ import { Detection, ProjectEvidence } from '../core/types';
 
 export class ProjectDetector implements vscode.Disposable {
   private readonly cache = new Map<string, Detection>();
+  private readonly reactCache = new Map<string, boolean>();
   private readonly watcher: vscode.FileSystemWatcher;
   constructor() {
     this.watcher = vscode.workspace.createFileSystemWatcher(
       '**/{package.json,vite.config.*,next.config.*,tsconfig.json,svelte.config.js,nuxt.config.ts}',
     );
     for (const e of ['onDidChange', 'onDidCreate', 'onDidDelete'] as const)
-      this.watcher[e](() => this.cache.clear());
+      this.watcher[e](() => {
+        this.cache.clear();
+        this.reactCache.clear();
+      });
   }
   dispose(): void {
     this.watcher.dispose();
@@ -63,5 +67,26 @@ export class ProjectDetector implements vscode.Disposable {
     );
     this.cache.set(key, result);
     return result;
+  }
+
+  async isReactProject(uri: vscode.Uri): Promise<boolean> {
+    const folder = vscode.workspace.getWorkspaceFolder(uri);
+    if (!folder) return false;
+    const key = folder.uri.toString();
+    const cached = this.reactCache.get(key);
+    if (cached !== undefined) return cached;
+    let detected = false;
+    try {
+      const raw = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(folder.uri, 'package.json'));
+      const pkg = JSON.parse(Buffer.from(raw).toString('utf8')) as {
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      };
+      detected = Boolean(pkg.dependencies?.react || pkg.devDependencies?.react);
+    } catch {
+      /* missing or malformed package.json */
+    }
+    this.reactCache.set(key, detected);
+    return detected;
   }
 }

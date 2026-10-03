@@ -11,6 +11,7 @@ import {
 } from './commands/actions';
 import { Diagnostics } from './diagnostics/diagnostics';
 import { config } from './config/configuration';
+import { instrument } from './commands/instrument';
 export function activate(context: vscode.ExtensionContext): void {
   const detector = new ProjectDetector(),
     diagnostics = new Diagnostics();
@@ -28,6 +29,10 @@ export function activate(context: vscode.ExtensionContext): void {
   reg('devlog.findAll', findAll);
   reg('devlog.convert', () => convert(detector));
   reg('devlog.checkSafety', checkSafety);
+  reg('devlog.react.logValueChanges', () => instrument(detector, 'value'));
+  reg('devlog.react.logRender', () => instrument(detector, 'render'));
+  reg('devlog.react.logLifecycle', () => instrument(detector, 'lifecycle'));
+  reg('devlog.logFunctionExecution', () => instrument(detector, 'function'));
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
   status.command = 'devlog.checkSafety';
   status.text = '$(shield) DevLog';

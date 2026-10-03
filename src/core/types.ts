@@ -29,7 +29,14 @@ export interface GenerateOptions {
   quote: 'single' | 'double';
   mode: 'inline' | 'helper';
   helperName: string;
+  pretty?: PrettyOptions;
 }
+export interface PrettyOptions {
+  enabled: boolean;
+  icons: boolean;
+  prefix: string;
+}
+export type LogKind = ConsoleMethod | 'react' | 'function' | 'mount' | 'unmount' | 'timing';
 export type FindingKind = 'protected' | 'unsafe' | 'ignored' | 'intentional' | 'malformed';
 export interface Finding {
   file: string;

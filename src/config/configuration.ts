@@ -9,6 +9,7 @@ export interface DevLogConfig {
   includeFunctionName: boolean;
   includeExpression: boolean;
   prefix: string;
+  pretty: { enabled: boolean; icons: boolean; prefix: string };
   marker: string;
   useSemicolons: boolean;
   quoteStyle: 'single' | 'double';
@@ -27,6 +28,11 @@ export function config(uri?: vscode.Uri): DevLogConfig {
     includeFunctionName: c.get('includeFunctionName', false),
     includeExpression: c.get('includeExpression', true),
     prefix: c.get('prefix', ''),
+    pretty: {
+      enabled: c.get('pretty.enabled', true),
+      icons: c.get('pretty.icons', true),
+      prefix: c.get('pretty.prefix', '[DevLog]'),
+    },
     marker: c.get('marker', '@devlog'),
     useSemicolons: c.get('useSemicolons', true),
     quoteStyle: c.get('quoteStyle', 'single'),
