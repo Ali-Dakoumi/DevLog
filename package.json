@@ -1,0 +1,242 @@
+{
+  "name": "devlog-development-only-logs",
+  "displayName": "DevLog — Development-Only Console Logs",
+  "description": "Log freely. Ship clean. Production-aware console logging for JavaScript and TypeScript.",
+  "version": "0.1.0",
+  "publisher": "your-publisher",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/devlog"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Debuggers",
+    "Other"
+  ],
+  "keywords": [
+    "console",
+    "logging",
+    "debug",
+    "development",
+    "production",
+    "console-log",
+    "debugging",
+    "typescript",
+    "javascript",
+    "vite",
+    "nextjs",
+    "nodejs"
+  ],
+  "main": "./dist/src/extension.js",
+  "bin": {
+    "devlog": "./dist/cli/index.js"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "compile": "tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json",
+    "lint": "eslint src cli test --ext .ts",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "package": "vsce package"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "devlog.insertLog",
+        "title": "DevLog: Insert Log"
+      },
+      {
+        "command": "devlog.insertWarning",
+        "title": "DevLog: Insert Warning"
+      },
+      {
+        "command": "devlog.insertError",
+        "title": "DevLog: Insert Error"
+      },
+      {
+        "command": "devlog.insertInfo",
+        "title": "DevLog: Insert Info"
+      },
+      {
+        "command": "devlog.insertTable",
+        "title": "DevLog: Insert Table"
+      },
+      {
+        "command": "devlog.removeCurrentFile",
+        "title": "DevLog: Remove All DevLogs From Current File"
+      },
+      {
+        "command": "devlog.removeWorkspace",
+        "title": "DevLog: Remove All DevLogs From Workspace"
+      },
+      {
+        "command": "devlog.commentAll",
+        "title": "DevLog: Comment All DevLogs"
+      },
+      {
+        "command": "devlog.uncommentAll",
+        "title": "DevLog: Uncomment All DevLogs"
+      },
+      {
+        "command": "devlog.findAll",
+        "title": "DevLog: Find All DevLogs"
+      },
+      {
+        "command": "devlog.convert",
+        "title": "DevLog: Convert console.log to DevLog"
+      },
+      {
+        "command": "devlog.checkSafety",
+        "title": "DevLog: Check Production Safety"
+      },
+      {
+        "command": "devlog.ignoreStatement",
+        "title": "DevLog: Ignore This Statement"
+      },
+      {
+        "command": "devlog.disableFile",
+        "title": "DevLog: Disable Warning for This File"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "devlog.insertLog",
+        "key": "ctrl+alt+l",
+        "mac": "cmd+alt+l",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "devlog.insertLog",
+          "when": "editorHasSelection",
+          "group": "devlog@1"
+        },
+        {
+          "command": "devlog.insertWarning",
+          "when": "editorHasSelection",
+          "group": "devlog@2"
+        },
+        {
+          "command": "devlog.insertError",
+          "when": "editorHasSelection",
+          "group": "devlog@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DevLog",
+      "properties": {
+        "devlog.mode": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "helper"
+          ],
+          "default": "inline",
+          "description": "Generate guarded blocks or devLog(...) helper calls."
+        },
+        "devlog.environment": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "vite",
+            "node",
+            "next",
+            "custom"
+          ],
+          "default": "auto"
+        },
+        "devlog.customCondition": {
+          "type": "string",
+          "default": "",
+          "description": "JavaScript expression used when environment is custom."
+        },
+        "devlog.helperName": {
+          "type": "string",
+          "default": "devLog"
+        },
+        "devlog.includeFileName": {
+          "type": "boolean",
+          "default": true
+        },
+        "devlog.includeLineNumber": {
+          "type": "boolean",
+          "default": true
+        },
+        "devlog.includeFunctionName": {
+          "type": "boolean",
+          "default": false
+        },
+        "devlog.includeExpression": {
+          "type": "boolean",
+          "default": true
+        },
+        "devlog.prefix": {
+          "type": "string",
+          "default": ""
+        },
+        "devlog.marker": {
+          "type": "string",
+          "default": "@devlog"
+        },
+        "devlog.useSemicolons": {
+          "type": "boolean",
+          "default": true
+        },
+        "devlog.quoteStyle": {
+          "type": "string",
+          "enum": [
+            "single",
+            "double"
+          ],
+          "default": "single"
+        },
+        "devlog.indentation": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "spaces",
+            "tabs"
+          ],
+          "default": "auto"
+        },
+        "devlog.productionCheck.enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "devlog.diagnostics.enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "devlog.statusBar.enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "minimatch": "^10.0.1",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "@vscode/vsce": "^3.2.1",
+    "ansi-regex": "^6.4.0",
+    "eslint": "^8.57.1",
+    "prettier": "^3.3.3",
+    "vitest": "^2.1.2"
+  }
+}

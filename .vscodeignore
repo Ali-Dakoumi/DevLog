@@ -1,0 +1,9 @@
+.git/**
+.github/**
+.vscode/**
+src/**
+cli/**
+test/**
+node_modules/@types/**
+node_modules/typescript/lib/*.map
+*.tsbuildinfo
